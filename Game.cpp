@@ -20,12 +20,21 @@ void Game::Reset()
 	ResetBall();
 
 	// TODO #2 - Add this brick and 4 more bricks to the vector
-	brick.width = 10;
-	brick.height = 2;
-	brick.x_position = 0;
-	brick.y_position = 5;
-	brick.doubleThick = true;
-	brick.color = ConsoleColor::DarkGreen;
+	m_bricks.clear();
+	for (int i = 0; i < 5; i++)
+	{
+		Box temporaryBrick;
+		temporaryBrick.width = 10;
+		temporaryBrick.height = 2;
+
+		temporaryBrick.x_position = 5 + (i * 14);
+		temporaryBrick.y_position = 5;
+
+		temporaryBrick.doubleThick = true;
+		temporaryBrick.color = ConsoleColor::DarkGreen;
+
+		m_bricks.push_back(temporaryBrick);
+		}
 }
 
 void Game::ResetBall()
@@ -69,7 +78,10 @@ void Game::Render() const
 	ball.Draw();
 
 	// TODO #3 - Update render to render all bricks
-	brick.Draw();
+	for (size_t i = 0; i < m_bricks.size(); i++)
+	{
+		m_bricks[i].Draw();
+	}
 
 	Console::Lock(false);
 }
@@ -77,22 +89,47 @@ void Game::Render() const
 void Game::CheckCollision()
 {
 	// TODO #4 - Update collision to check all bricks
-	if (brick.Contains(ball.x_position + ball.x_velocity, ball.y_position + ball.y_velocity))
+	for (size_t i = 0; i < m_bricks.size(); i++)
 	{
-		brick.color = ConsoleColor(brick.color - 1);
-		ball.y_velocity *= -1;
+		int nextX = ball.x_position + ball.x_velocity;
+		int nextY = ball.y_position + ball.y_velocity;
+
+		if (m_bricks[i].Contains(nextX, nextY))
+		{
+			ball.y_velocity = ball.y_velocity * -1;
+
+			int rawColorValue = (int)m_bricks[i].color - 1;
+			m_bricks[i].color = (ConsoleColor)rawColorValue;
+		}
 
 		// TODO #5 - If the ball hits the same brick 3 times (color == black), remove it from the vector
+		if (m_bricks[i].color == ConsoleColor::Black)
+		{
+			m_bricks.erase(m_bricks.begin() + i);
 
+			i--;
+		}
 	}
 
+
+
+
 	// TODO #6 - If no bricks remain, pause ball and display (render) victory text with R to reset
-
-
-	if (paddle.Contains(ball.x_position + ball.x_velocity, ball.y_velocity + ball.y_position))
+	if (m_bricks.empty())
 	{
-		ball.y_velocity *= -1;
+		Console::SetCursorPosition(24, 15);
+		std::cout << "You win! Press 'R' to play again.";
 	}
 
 	// TODO #7 - If ball touches bottom of window, pause ball and display (render) defeat text with R to reset
+	if (m_bricks.size() == 0 || ball.y_position >= 29)
+	{
+		ball.moving = false;
+	}
+
+	else if (ball.y_position >= 29)
+	{
+		Console::SetCursorPosition(24, 15);
+		std::cout << "You lose. Press 'R' to play again.";
+	}
 }
